@@ -1,0 +1,168 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LotPilot AI</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0b1220;color:#edf3fb;font:15px Arial,sans-serif}
+header{background:#101827;padding:20px;position:sticky;top:0;z-index:2;border-bottom:1px solid #293950}
+main{max-width:700px;margin:auto;padding:14px}
+.card{background:#131e30;border:1px solid #293950;border-radius:14px;padding:15px;margin:12px 0}
+h2{font-size:16px}
+button{background:#277c60;color:white;border:0;border-radius:9px;padding:12px;margin:4px;cursor:pointer}
+input{background:#0d1727;color:white;border:1px solid #52647a;border-radius:8px;padding:12px;width:65%;max-width:100%}
+.muted{color:#9aabc1;font-size:13px}
+.bubble{padding:12px;border-radius:12px;margin:8px 0;background:#173b35;overflow-wrap:anywhere}
+.customer{background:#25364c}
+.row{padding:9px;border-bottom:1px solid #293950}
+</style>
+</head>
+<body>
+<header>
+<strong>🚘 LOTPILOT AI</strong>
+<div class="muted">Dealership Control Room · Demo Active</div>
+</header>
+<main>
+<div class="card">
+<h2>01 · Lead Inbox</h2>
+<button onclick="lead('Alex')">Alex · F-150</button>
+<button onclick="lead('Jamie')">Jamie · RAV4</button>
+<button onclick="lead('Taylor')">Taylor · Civic</button>
+<p id="source" class="muted">Facebook Marketplace · Active inquiry</p>
+</div>
+
+<div class="card">
+<h2>02 · Customer Conversation</h2>
+<div id="chat"></div>
+<input id="message" placeholder="Type a customer message">
+<button onclick="send()">Send</button>
+</div>
+
+<div class="card">
+<h2>03 · AI Decision & Policy</h2>
+<div class="row">Lead temperature: <b id="temperature">Warm</b></div>
+<div class="row">Policy status: <b id="policy">Approved</b></div>
+<div class="row">Next action: <b id="next">Qualify trade-in</b></div>
+<p class="muted">Simulated decision engine. No real messages are sent.</p>
+</div>
+
+<div class="card">
+<h2>04 · Dealership Inventory</h2>
+<b id="vehicle">2021 Ford F-150 XLT</b>
+<p id="price" class="muted">$38,995 CAD · Available · Prairie Motors</p>
+</div>
+
+<div class="card">
+<h2>05 · Customer Memory</h2>
+<div id="memory">Interested in the F-150</div>
+</div>
+
+<div class="card">
+<h2>06 · Appointment Simulator</h2>
+<div id="appointment" class="muted">Appointment options will appear here.</div>
+</div>
+
+<div class="card">
+<h2>07 · Activity History</h2>
+<div id="audit" class="muted">Demo started · Lead received</div>
+<button onclick="reset()">Reset Demo</button>
+</div>
+
+<div class="card muted">
+Prototype only. Fictional customer and vehicle information. No live dealership systems or calendars are connected.
+</div>
+</main>
+
+<script>
+let current="Alex";
+let data={
+Alex:{vehicle:"2021 Ford F-150 XLT",price:"$38,995 CAD",source:"Facebook Marketplace",messages:["Hi, I'm interested in the F-150. Is it available?","Yes, it's currently available. Are you considering a trade-in?"]},
+Jamie:{vehicle:"2022 Toyota RAV4 XLE",price:"$31,995 CAD",source:"Website inquiry",messages:["Is the RAV4 still available?","Yes, it's available. Would you like to arrange a visit?"]},
+Taylor:{vehicle:"2023 Honda Civic Sport",price:"$27,995 CAD",source:"Website inquiry",messages:["I'm interested in the Civic. Is it available?","That vehicle is marked as sold. I can help find a similar one."]}
+};
+let messages=[],memory=[],events=[];
+
+function lead(name){
+current=name;
+messages=[["customer",data[name].messages[0]],["ai",data[name].messages[1]]];
+memory=["Interested in "+data[name].vehicle];
+events=["Lead received","Vehicle information checked","AI response generated"];
+document.getElementById("source").textContent=data[name].source;
+document.getElementById("vehicle").textContent=data[name].vehicle;
+document.getElementById("price").textContent=data[name].price+" · Prairie Motors";
+document.getElementById("temperature").textContent="Warm";
+document.getElementById("policy").textContent="Approved";
+document.getElementById("next").textContent="Continue conversation";
+document.getElementById("appointment").textContent="Appointment options will appear here.";
+render();
+}
+
+function render(){
+document.getElementById("chat").innerHTML=messages.map(m=>'<div class="bubble '+(m[0]==="customer"?"customer":"")+'"><b>'+m[0]+'</b><br>'+safe(m[1])+'</div>').join("");
+document.getElementById("memory").innerHTML=memory.map(x=>"✓ "+safe(x)).join("<br>");
+document.getElementById("audit").innerHTML=events.slice().reverse().map(s=>"• "+safe(s)).join("<br>");
+}
+
+function safe(s){
+return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+function send(){
+let box=document.getElementById("message");
+let t=box.value.trim();
+if(!t)return;
+
+let l=t.toLowerCase();
+let reply="Thanks for sharing that. I can help with the details. Would you like to arrange a visit?";
+let next="Continue conversation";
+let temp="Warm";
+
+if(l.includes("stop")||l.includes("unsubscribe")){
+reply="Understood. We will not send further messages.";
+document.getElementById("policy").textContent="Opt-out honored";
+next="Stop further outreach";
+}else{
+if(l.includes("trade")||l.includes("escape"))memory.push("Customer has a possible trade-in");
+if(l.includes("90,000")||l.includes("90000"))memory.push("Trade-in mileage: approximately 90,000 km");
+
+if(l.includes("price")||l.includes("discount")||l.includes("move on")){
+reply="I understand wanting the numbers to work. I can't promise a discount without dealership approval, but our team can review the deal with you.";
+next="Price objection · Request approval";
+temp="Hot";
+}
+
+if(l.includes("saturday")||l.includes("appointment")||l.includes("test drive")){
+reply="We'd be happy to arrange a visit. Would Saturday at 10 AM or 1 PM work better?";
+next="Offer appointment times";
+temp="Hot";
+document.getElementById("appointment").innerHTML='<button onclick="book(10)">Saturday · 10 AM</button><button onclick="book(1)">Saturday · 1 PM</button>';
+}
+}
+
+messages.push(["customer",t],["ai",reply]);
+events.push("Customer message received","Intent analyzed: "+next,"AI response generated");
+document.getElementById("temperature").textContent=temp;
+document.getElementById("next").textContent=next;
+box.value="";
+render();
+}
+
+function book(hour){
+let slot=hour===10?"Saturday at 10 AM":"Saturday at 1 PM";
+document.getElementById("appointment").textContent="✓ Simulated appointment: "+slot;
+memory.push("Appointment selected: "+slot);
+events.push("Simulated appointment recorded");
+render();
+}
+
+function reset(){
+lead(current);
+}
+
+lead("Alex");
+</script>
+</body>
+</html>
